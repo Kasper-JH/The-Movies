@@ -8,5 +8,6 @@ namespace TheMovies.Models
     {
 
         // Test-kommentar af Daniel ift. Push :)
+        // Test-kommentar af Kasper ift. Push :)
     }
 }
