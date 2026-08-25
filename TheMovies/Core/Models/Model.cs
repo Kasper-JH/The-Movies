@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace TheMovies.ViewModels
+namespace TheMovies.Core.Models.Models;
+
+class Movie
 {
-    class Class1
-    {
-    }
+
 }
