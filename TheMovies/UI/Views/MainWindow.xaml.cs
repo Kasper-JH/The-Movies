@@ -1,23 +1,17 @@
-﻿using System.Text;
+﻿/*
+ * SRP: Denne fil indeholder kun konstruktoren til MainWindow.
+ * DataContext sættes udefra (i App.xaml.cs), så der er ingen logik her.
+ */
+
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
-namespace TheMovies.UI.Views;
-
-/// <summary>
-/// Interaction logic for MainWindow.xaml
-/// </summary>
-public partial class MainWindow : Window
+namespace TheMovies.UI.Views
 {
-    public MainWindow()
+    public partial class MainWindow : Window
     {
-        InitializeComponent();
+        public MainWindow()
+        {
+            InitializeComponent();
+        }
     }
 }

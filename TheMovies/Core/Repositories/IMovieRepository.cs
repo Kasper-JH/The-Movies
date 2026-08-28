@@ -1,20 +1,6 @@
 ﻿/*
- * Single Responsibility Principle (SRP):
- * Dette interface definerer kontrakten for datalagring af film.
- * Det adskiller FORRETNINGSLOGIKKEN (ViewModel) fra PERSISTENSLOGIKKEN (Repository).
- * ViewModel'en kender KUN dette interface - ikke den konkrete implementering.
- * 
- * CRUD-operationer:
- * - Create: Add(Movie movie) - tilføjer en ny film
- * - Read:   GetAll() - henter alle film (bruges ved opstart og navigation)
- * - Update: Ikke nødvendig i dette scope (film ændres ikke efter registrering)
- * - Delete: Ikke nødvendig i dette scope (film slettes ikke)
- * 
- * Exists bruges til validering før Create (undgår dubletter - Exception Flow 4a).
- * SaveChanges gemmer alle ændringer til den fysiske fil (JSON-persistens).
- * 
- * Bemærk: GetByTitle er fjernet, da navigation sker via indeks i en liste,
- * og der ikke er behov for søgefunktionalitet i dette scope.
+ * SRP: Dette interface definerer de metoder, som et repository til film skal have.
+ * Det gør det muligt at skifte mellem forskellige datakilder (f.eks. JSON, database) uden at ændre ViewModel.
  */
 
 using System.Collections.Generic;
@@ -24,18 +10,16 @@ namespace TheMovies.Core.Repositories
 {
     public interface IMovieRepository
     {
-        // READ: Henter alle film fra datakilden (bruges ved opstart og til navigation)
+        // Henter alle film fra datakilden
         IEnumerable<Movie> GetAll();
 
-        // CREATE: Tilføjer en ny film til datakilden (bruges ved registrering)
-        void Add(Movie movie);
+        // Gemmer en ny film i datakilden (både in-memory og til fil)
+        void SaveMovie(Movie movie);
 
-        // VALIDATION: Tjekker om en film med præcis samme Title, Duration og Genre allerede findes
-        // Bruges i Exception Flow 4a: Hvis filmen allerede findes, informeres brugeren
-        bool Exists(Movie movie);
+        // Tjekker om en film allerede er registreret (undgår dubletter)
+        bool IsMovieRegistered(Movie movie);
 
-        // PERSIST: Gemmer ændringer til den fysiske fil (f.eks. JSON)
-        // Kaldes efter Add for at sikre data er gemt permanent
-        void SaveChanges();
+        // Gemmer alle ændringer til den fysiske fil (persistens)
+        void SaveToFile();
     }
 }

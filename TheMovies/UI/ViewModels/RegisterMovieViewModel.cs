@@ -1,25 +1,10 @@
 ﻿/*
- * Single Responsibility Principle (SRP):
- * Denne klasse har én primær opgave: at håndtere PRÆSENTATIONSLOGIKKEN for film-registrering og visning.
- * Den fungerer som mellemmand mellem View (WPF) og Model (Movie) + Repository.
- * 
- * ViewModel'en står for:
- * - At eksponere data til UI'et via properties (med INotifyPropertyChanged)
- * - At håndtere brugerens interaktioner via ICommand (Register, Next, Previous)
- * - At indeholde forretningsregler (f.eks. duplikat-tjek og validering)
- * - At kalde Repository til persistens
- * - At håndtere navigation gennem filmene (Next/Previous med indeks)
- * 
- * INotifyPropertyChanged er KUN implementeret her (i ViewModel) - ikke i Movie.
- * Dette sikrer en ren adskillelse: UI-notifikation hører til i præsentationslaget.
- * 
- * Ved opstart indlæses alle film fra repository (LoadMovies).
- * Navigation foregår ved at ændre _currentIndex og opdatere UI-properties.
- * Ved registrering opdateres listen og der navigeres til den nye film.
+ * SRP: Denne ViewModel står for præsentationslogikken til registrering af film.
+ * Den modtager en IMovieRepository via constructor injection (Dependency Injection).
+ * Den indeholder properties til UI-binding, kommandoer til registrering, og validering.
  */
 
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -32,51 +17,31 @@ namespace TheMovies.UI.ViewModels
 {
     public class RegisterMovieViewModel : INotifyPropertyChanged
     {
-        // Repository til persistens (dependency injection via interfacet)
+        // Repository til at gemme/hente film (injected via constructor)
         private readonly IMovieRepository _repository;
 
-        // Liste over alle film (bruges til navigation) - ALDRIG null!
-        private List<Movie> _allMovies = new List<Movie>();
-
-        // Aktuel indeks i listen (bruges til navigation)
-        private int _currentIndex;
-
-        // Backing fields til UI-binding
+        // Backing fields til properties
         private string _title = string.Empty;
         private int _duration;
         private string _genre = string.Empty;
         private string _statusMessage = string.Empty;
 
-        // Constructor - initialiserer repository og indlæser data
-        public RegisterMovieViewModel()
+        // Kommando til registrering (gemmes som RelayCommand så vi kan kalde RaiseCanExecuteChanged)
+        private readonly RelayCommand _registerMovieCommand;
+
+        // Constructor: modtager repository udefra (dependency injection)
+        public RegisterMovieViewModel(IMovieRepository repository)
         {
-            try
-            {
-                _repository = new FileMovieRepository();
+            _repository = repository ?? throw new ArgumentNullException(nameof(repository));
 
-                // PERSISTENS: Indlæs alle film ved opstart
-                LoadMovies();
+            // Opretter kommandoen: ved udførsel kaldes RegisterMovie(), og CanRegister() bestemmer om knappen er aktiv
+            _registerMovieCommand = new RelayCommand(_ => RegisterMovie(), _ => CanRegister());
 
-                // Opretter kommandoer til UI-handlinger
-                RegisterMovieCommand = new RelayCommand(_ => RegisterMovie(), _ => CanRegister());
-                NextMovieCommand = new RelayCommand(_ => NextMovie(), _ => HasNext());
-                PreviousMovieCommand = new RelayCommand(_ => PreviousMovie(), _ => HasPrevious());
-            }
-            catch (Exception ex)
-            {
-                // Hvis noget går galt, sæt en fejlbesked og sørg for at UI'et ikke crasher
-                _allMovies = new List<Movie>();
-                StatusMessage = $"FEJL ved opstart: {ex.Message}";
-
-                // Opretter dummy-kommandoer så UI'et ikke crasher
-                RegisterMovieCommand = new RelayCommand(_ => { }, _ => false);
-                NextMovieCommand = new RelayCommand(_ => { }, _ => false);
-                PreviousMovieCommand = new RelayCommand(_ => { }, _ => false);
-            }
+            // Ved opstart indlæses film (for at tælle hvor mange der findes)
+            LoadMovies();
         }
 
-        // ========== UI-BINDING PROPERTIES ==========
-
+        // Properties som UI'et binder til
         public string Title
         {
             get => _title;
@@ -86,8 +51,7 @@ namespace TheMovies.UI.ViewModels
                 {
                     _title = value;
                     OnPropertyChanged();
-                    // Opdater "Register"-knappens aktivitet
-                    ((RelayCommand)RegisterMovieCommand)?.RaiseCanExecuteChanged();
+                    _registerMovieCommand.RaiseCanExecuteChanged(); // Opdater knap-status
                 }
             }
         }
@@ -101,7 +65,7 @@ namespace TheMovies.UI.ViewModels
                 {
                     _duration = value;
                     OnPropertyChanged();
-                    ((RelayCommand)RegisterMovieCommand)?.RaiseCanExecuteChanged();
+                    _registerMovieCommand.RaiseCanExecuteChanged();
                 }
             }
         }
@@ -115,7 +79,7 @@ namespace TheMovies.UI.ViewModels
                 {
                     _genre = value;
                     OnPropertyChanged();
-                    ((RelayCommand)RegisterMovieCommand)?.RaiseCanExecuteChanged();
+                    _registerMovieCommand.RaiseCanExecuteChanged();
                 }
             }
         }
@@ -133,16 +97,10 @@ namespace TheMovies.UI.ViewModels
             }
         }
 
-        // ========== KOMMANDOER ==========
+        // Eksponerer kommandoen til UI (binding)
+        public ICommand RegisterMovieCommand => _registerMovieCommand;
 
-        public ICommand RegisterMovieCommand { get; private set; }
-        public ICommand NextMovieCommand { get; private set; }
-        public ICommand PreviousMovieCommand { get; private set; }
-
-        // ========== VALIDERINGSLOGIK ==========
-
-        // Bestemmer om "Register"-knappen er aktiv
-        // Alle tre felter skal være udfyldt og Duration > 0
+        // Validering: knappen er kun aktiv når alle felter er udfyldt og Duration > 0
         private bool CanRegister()
         {
             return !string.IsNullOrWhiteSpace(Title) &&
@@ -150,13 +108,10 @@ namespace TheMovies.UI.ViewModels
                    !string.IsNullOrWhiteSpace(Genre);
         }
 
-        // ========== FORRETNINGSLOGIK ==========
-
-        // Hovedmetode: Registrerer en ny film
-        // Kaldes når brugeren trykker på "Register Movie"-knappen
+        // Hovedmetode: registrerer en ny film
         private void RegisterMovie()
         {
-            // Opretter en ny Movie
+            // Opretter et nyt Movie-objekt med de indtastede værdier
             var movie = new Movie
             {
                 Title = Title,
@@ -164,132 +119,52 @@ namespace TheMovies.UI.ViewModels
                 Genre = Genre
             };
 
-            // *** EXCEPTION FLOW 4a: Tjek om filmen allerede findes i systemet ***
-            // Tjekker om der allerede findes en film med præcis samme Title, Duration og Genre
-            if (_repository.Exists(movie))
+            // Tjek om filmen allerede findes (for at undgå dubletter, dvs. UC1 Exception Flow (4a))
+            if (_repository.IsMovieRegistered(movie))
             {
                 StatusMessage = "FEJL: Filmen findes allerede!";
                 return;
             }
 
-            // Gemmer filmen via repository (tilføj til liste + gem til JSON)
-            _repository.Add(movie);
-            _repository.SaveChanges();
+            // Gem filmen via repository (gemmer både i hukommelse og til fil)
+            try
+            {
+                _repository.SaveMovie(movie);
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"FEJL: Filmen kunne ikke gemmes: {ex.Message}";
+                return;
+            }
 
-            // Opdater den interne liste og sæt index til den nye film
-            _allMovies = _repository.GetAll().ToList();
-            _currentIndex = _allMovies.Count - 1;
-            UpdateCurrentMovie();
-
-            // Bekræft overfor brugeren
+            // Succes: opdater status og ryd felter
             StatusMessage = $"Filmen '{Title}' er nu registreret!";
-
-            // Rydder felterne så brugeren kan indtaste næste film
             Title = string.Empty;
             Duration = 0;
             Genre = string.Empty;
         }
 
-        // ========== NAVIGATIONSLOGIK ==========
-
-        // Gå til næste film i listen
-        private void NextMovie()
-        {
-            if (HasNext())
-            {
-                _currentIndex++;
-                UpdateCurrentMovie();
-                StatusMessage = $"Viser film {_currentIndex + 1} af {_allMovies.Count}";
-            }
-        }
-
-        // Gå til forrige film i listen
-        private void PreviousMovie()
-        {
-            if (HasPrevious())
-            {
-                _currentIndex--;
-                UpdateCurrentMovie();
-                StatusMessage = $"Viser film {_currentIndex + 1} af {_allMovies.Count}";
-            }
-        }
-
-        // Tjek om der er en næste film (styrer "Next"-knappens aktivitet)
-        private bool HasNext()
-        {
-            return _allMovies != null && _currentIndex < _allMovies.Count - 1;
-        }
-
-        // Tjek om der er en forrige film (styrer "Previous"-knappens aktivitet)
-        private bool HasPrevious()
-        {
-            return _allMovies != null && _currentIndex > 0;
-        }
-
-        // ========== PERSISTENS VED OPSTART ==========
-
-        // Henter alle film fra repository (bruges ved opstart)
+        // Indlæser film ved opstart for at vise antal i status
         private void LoadMovies()
         {
             try
             {
-                // Sikrer at vi aldrig får null fra GetAll()
+                // Hent alle film. ?. sikrer at vi ikke crasher hvis repository er null
                 var movies = _repository?.GetAll();
-                _allMovies = movies?.ToList() ?? new List<Movie>();
+                // Tæl film. Hvis movies er null, bliver count 0 (pga. ?? 0)
+                int count = movies?.Count() ?? 0;
+
+                StatusMessage = count > 0
+                    ? $"Indlæste {count} film fra fil"
+                    : "Ingen film fundet - registrer en ny!";
             }
             catch (Exception ex)
             {
-                _allMovies = new List<Movie>();
                 StatusMessage = $"Fejl ved indlæsning: {ex.Message}";
-                return;
             }
-
-            if (_allMovies.Any())
-            {
-                _currentIndex = 0;
-                UpdateCurrentMovie();
-                StatusMessage = $"Indlæste {_allMovies.Count} film fra fil";
-            }
-            else
-            {
-                // Ryd felterne hvis der ikke er nogen film
-                Title = string.Empty;
-                Duration = 0;
-                Genre = string.Empty;
-                StatusMessage = "Ingen film fundet - registrer en ny!";
-            }
-
-            // Opdater navigation-knapperne
-            ((RelayCommand)NextMovieCommand)?.RaiseCanExecuteChanged();
-            ((RelayCommand)PreviousMovieCommand)?.RaiseCanExecuteChanged();
         }
 
-        // ========== UI OPDATERING ==========
-
-        // Opdater UI'et med den aktuelle film (baseret på _currentIndex)
-        private void UpdateCurrentMovie()
-        {
-            if (_allMovies != null && _allMovies.Any() && _currentIndex >= 0 && _currentIndex < _allMovies.Count)
-            {
-                var movie = _allMovies[_currentIndex];
-                Title = movie.Title;
-                Duration = movie.Duration;
-                Genre = movie.Genre;
-            }
-            else
-            {
-                Title = string.Empty;
-                Duration = 0;
-                Genre = string.Empty;
-            }
-
-            // Opdater navigation-knapperne (aktiver/deaktiver)
-            ((RelayCommand)NextMovieCommand)?.RaiseCanExecuteChanged();
-            ((RelayCommand)PreviousMovieCommand)?.RaiseCanExecuteChanged();
-        }
-
-        // ========== INotifyPropertyChanged IMPLEMENTERING ==========
-
+        // INotifyPropertyChanged implementering
         public event PropertyChangedEventHandler PropertyChanged;
 
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
@@ -297,4 +172,4 @@ namespace TheMovies.UI.ViewModels
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
-}   // <-- HUSK LUKKENDE PARENTES! 
+}

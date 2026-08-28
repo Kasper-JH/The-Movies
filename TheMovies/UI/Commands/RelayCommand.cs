@@ -1,18 +1,6 @@
 ﻿/*
- * Single Responsibility Principle (SRP):
- * Denne klasse har kun én opgave: at implementere ICommand-grænsefladen.
- * Den fungerer som en "bro" mellem UI'et (WPF) og ViewModel'ens metoder.
- * 
- * RelayCommand gør det muligt at binde UI-handlinger (f.eks. knap-klik)
- * til ViewModel-metoder uden at View'et har direkte kendskab til ViewModel'ens logik.
- * 
- * Dette er en genbrugelig komponent - den bruges til ALLE kommandoer i projektet:
- * - RegisterMovieCommand (gem film)
- * - NextMovieCommand (næste film)
- * - PreviousMovieCommand (forrige film)
- * 
- * CanExecute funktionen gør det muligt at aktivere/deaktivere knapper dynamisk,
- * f.eks. deaktiveres "Næste"-knappen når man er på sidste film.
+ * SRP: Denne klasse implementerer ICommand-grænsefladen, så ViewModel kan binde handlinger til UI-elementer (f.eks. knapper).
+ * Den fungerer som en bro mellem View og ViewModel.
  */
 
 using System;
@@ -22,35 +10,36 @@ namespace TheMovies.UI.Commands
 {
     public class RelayCommand : ICommand
     {
-        // Delegates til at udføre kommandoen og tjekke om den kan udføres
+        // _execute indeholder den metode, der skal udføres, _canExecute tjekker om den kan udføres
         private readonly Action<object> _execute;
         private readonly Func<object, bool> _canExecute;
 
-        // Constructor - execute er påkrævet, canExecute er valgfri
         public RelayCommand(Action<object> execute, Func<object, bool> canExecute = null)
         {
+            // Null-coalescing operator (??) tjekker om execute er null.
+            // Hvis ja: smid en ArgumentNullException (execute skal altid være sat)
+            // Hvis nej: gem execute i _execute
             _execute = execute ?? throw new ArgumentNullException(nameof(execute));
             _canExecute = canExecute;
         }
 
-        // Event der underretter UI'et om, at CanExecute har ændret sig
-        // F.eks. når en property ændres, der påvirker om en knap skal være aktiv
+        // Event der fortæller UI, at CanExecute-status er ændret
         public event EventHandler CanExecuteChanged;
 
-        // Bestemmer om kommandoen kan udføres (f.eks. om knappen er aktiv)
+        // Kan kommandoen udføres? (bruges til at aktivere/deaktivere knapper)
         public bool CanExecute(object parameter)
         {
+            // Hvis _canExecute er null, er knappen altid aktiv
             return _canExecute == null || _canExecute(parameter);
         }
 
-        // Udfører selve handlingen (kalder den metode, der blev givet i constructoren)
+        // Udfør selve handlingen (kalder den gemte metode)
         public void Execute(object parameter)
         {
             _execute(parameter);
         }
 
-        // Metode der kan kaldes for at opdatere UI'et (f.eks. når en property ændres)
-        // Bruges i ViewModel efter ændringer af Title, Duration, Genre eller navigation
+        // Metode der kan kaldes for at opdatere UI (f.eks. når en property ændres)
         public void RaiseCanExecuteChanged()
         {
             CanExecuteChanged?.Invoke(this, EventArgs.Empty);
