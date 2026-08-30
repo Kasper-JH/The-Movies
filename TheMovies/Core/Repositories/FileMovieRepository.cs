@@ -64,6 +64,31 @@ namespace TheMovies.Core.Repositories
                 string.Equals(m.Genre, movie.Genre, StringComparison.OrdinalIgnoreCase));
         }
 
+        // Opdaterer en eksisterende film (bruges i UC2 til at sætte instruktør/premieredato).
+        // Filmen antages allerede at være den samme reference som findes i _movies
+        // (den kommer fra GetAll() via ViewModel'ens dropdown), så vi behøver blot
+        // at bekræfte, at den findes, og derefter persistere ændringerne.
+        public void UpdateMovie(Movie movie)
+        {
+            if (movie == null)
+                throw new ArgumentNullException(nameof(movie));
+
+            bool found = false;
+            foreach (var existing in _movies)
+            {
+                if (existing == movie)
+                {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found)
+                throw new InvalidOperationException("Filmen findes ikke i repository og kan derfor ikke opdateres.");
+
+            SaveToFile();
+        }
+
         // Gemmer alle ændringer til den fysiske fil (persistens)
         public void SaveToFile()
         {
