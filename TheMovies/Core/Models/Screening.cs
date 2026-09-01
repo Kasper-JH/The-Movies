@@ -1,12 +1,11 @@
 ﻿/*
- * SRP: Denne klasse repræsenterer en forestilling - en konkret visning af en
- * film i en given biograf, sal og på et givent tidspunkt.
- *
- * Sporbarhed: EndTime er en afledt attribut jf. UC2-domænemodellens note
- * ("/slutTidspunkt er en afledt attribut, beregnet jf. trin 7 i UC2"),
- * og beregningen implementerer præcis UC2 trin 7:
- * "Systemet beregner forestillingens sluttidspunkt ud fra filmens varighed
- * samt 15 minutters reklamer og 15 minutters rengøring."
+ * SRP: Denne klasse repræsenterer en forestilling, hvilket svarer til en konkret visning af en
+ * film i en given biograf, sal og på et givent tidspunkt (UC2).
+ * 
+ * Den samlede mængde af forestillinger, der oprettes via UC2 for en given 
+ * biograf og måned, udgør biograf-programmet for den følgende måned, hvilket også 
+ * svarer til det Excel-ark som Jens Peter tidligere udarbejdede manuelt (i scenarie 2)
+ * (jf. "Øvrige noter"-sektionen i UC2).
  */
 
 using System;

@@ -32,7 +32,7 @@ namespace TheMovies.Core.Repositories
         }
 
         // Tjekker om et tidsrum overlapper en eksisterende forestilling i samme
-        // biograf/sal, jf. UC2 undtagelsesflow 5a.
+        // biograf/sal, jf. UC2 undtagelsesflow 6a.
         public bool HasOverlap(Cinema cinema, Hall hall, DateTime start, DateTime end)
         {
             if (cinema == null || hall == null)

@@ -69,7 +69,7 @@ namespace TheMovies.Core.Models
         }
 
         // Nullable, fordi de ikke er en del af UC1 (oprettelse af en film) -
-        // de udfyldes først når filmen indgår i en forestilling, jf. UC2 trin 3-4.
+        // de udfyldes først når filmen indgår i en forestilling, jf. UC2 trin 4-5.
         public string? Director
         {
             get => _director;

@@ -223,7 +223,7 @@ namespace TheMovies.UI.ViewModels
             return TimeSpan.TryParse(ScreeningTime, out _);
         }
 
-        // Hovedmetode: opretter en ny forestilling (UC2 trin 3-8)
+        // Hovedmetode: opretter en ny forestilling (UC2)
         private void CreateScreening()
         {
             // Håndtering af ugyldigt klokkeslæt – giver en venlig fejlbesked
@@ -236,7 +236,7 @@ namespace TheMovies.UI.ViewModels
             var startTime = ScreeningDate.Date + time;
 
             // Filmen må ikke vises før premieredatoen
-            // Note: Scenarier specificerer intet om at pre-screenings kunne være en ting, f.eks. 
+            // Note: Scenarierne specificerer intet om at pre-screenings kunne være en ting, f.eks. 
             // en forestilling oprettet i systemet før premieredatoen kun for ansatte eller andet
             // i denne stil. Derfor dette tjek, men skulle måske ændres hvis pre-screenings blev
             // efterspurgt af kunden? 
@@ -249,14 +249,14 @@ namespace TheMovies.UI.ViewModels
             // Screening-konstruktoren beregner selv sluttidspunktet (UC2 trin 7)
             var tentativeScreening = new Screening(SelectedMovie, SelectedCinema, SelectedHall, startTime);
 
-            // UC2 undtagelsesflow 5a: tjek for overlap, før forestillingen oprettes
+            // UC2 undtagelsesflow 6a: tjek for overlap, før forestillingen oprettes
             if (_screeningRepository.HasOverlap(SelectedCinema, SelectedHall, tentativeScreening.StartTime, tentativeScreening.EndTime))
             {
                 StatusMessage = "FEJL: Tidspunktet er optaget i den valgte sal – vælg et nyt tidspunkt.";
                 return;
             }
 
-            // Film-objektet får yderligere data mht. instruktør og premieredato (UC2 trin 3-4)
+            // Film-objektet får yderligere data mht. instruktør og premieredato (UC2 trin 4-5)
             SelectedMovie.Director = Director;
             SelectedMovie.PremiereDate = PremiereDate;
 

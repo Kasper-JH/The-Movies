@@ -15,7 +15,7 @@ namespace TheMovies.Core.Repositories
         IEnumerable<Screening> GetAll();
 
         // Tjekker om et tidsrum overlapper en eksisterende forestilling i samme
-        // biograf/sal, jf. UC2 undtagelsesflow 5a
+        // biograf/sal, jf. UC2 undtagelsesflow 6a
         bool HasOverlap(Cinema cinema, Hall hall, DateTime start, DateTime end);
 
         // Gemmer en ny forestilling i datakilden (både in-memory og til fil)
