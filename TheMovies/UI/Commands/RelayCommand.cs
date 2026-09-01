@@ -1,5 +1,6 @@
 ﻿/*
- * SRP: Denne klasse implementerer ICommand-grænsefladen, så ViewModel kan binde handlinger til UI-elementer (f.eks. knapper).
+ * SRP: Denne klasse implementerer ICommand-grænsefladen, så ViewModel kan 
+ * binde handlinger til UI-elementer (f.eks. knapper).
  * Den fungerer som en bro mellem View og ViewModel.
  */
 

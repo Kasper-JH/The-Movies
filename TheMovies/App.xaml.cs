@@ -1,15 +1,12 @@
 ﻿/*
  * SRP: Denne klasse står for opstart af applikationen (composition root).
- * Her oprettes repositories og ViewModels, og de sættes sammen via constructor injection.
- *
- * OBS: Der er endnu ikke lavet navigation mellem UC1 og UC2's vinduer - begge
- * vinduer åbnes blot samtidigt her, indtil I beslutter jer for en navigationsløsning.
+ * Her oprettes repositories (så vi kan arbejde med vores data) og 
+ * startmenuen med tilhørende ViewModel.
+ * 
  */
-
 using System;
 using System.Windows;
 using TheMovies.Core.Repositories;
-using TheMovies.Core.Seed;
 using TheMovies.UI.ViewModels;
 using TheMovies.UI.Views;
 
@@ -21,42 +18,24 @@ namespace TheMovies
         {
             base.OnStartup(e);
 
-            IMovieRepository movieRepository;
-            IScreeningRepository screeningRepository;
-
-            // Opret repositories (konkrete implementeringer).
-            // Kan kaste InvalidOperationException hvis movies.json/screenings.json er korrupt.
             try
             {
-                movieRepository = new FileMovieRepository();
-                screeningRepository = new FileScreeningRepository();
+                // Opret repositories til persistens (JSON-filer)
+                var movieRepository = new FileMovieRepository();
+                var screeningRepository = new FileScreeningRepository();
+
+                // Opret startmenu med tilhørende ViewModel
+                var mainMenuView = new MainMenuView();
+                mainMenuView.DataContext = new MainMenuViewModel(movieRepository, screeningRepository);
+                mainMenuView.Show();
             }
             catch (InvalidOperationException ex)
             {
+                // Hvis filerne er korrupte eller utilgængelige, vises en fejl og programmet lukker
                 MessageBox.Show($"Kunne ikke starte: {ex.Message}", "Fejl ved opstart",
                     MessageBoxButton.OK, MessageBoxImage.Error);
                 Shutdown();
-                return;
             }
-
-            // Faste biografer/sale (statisk seed data, jf. UC2's noter)
-            var cinemas = CinemaSeed.GetAll();
-
-            // UC1 - Registrer film
-            var registerMovieViewModel = new RegisterMovieViewModel(movieRepository);
-            var mainWindow = new MainWindow
-            {
-                DataContext = registerMovieViewModel
-            };
-            mainWindow.Show();
-
-            // UC2 - Opret forestilling
-            var createScreeningViewModel = new CreateScreeningViewModel(movieRepository, screeningRepository, cinemas);
-            var createScreeningWindow = new CreateScreeningView
-            {
-                DataContext = createScreeningViewModel
-            };
-            createScreeningWindow.Show();
         }
     }
 }
