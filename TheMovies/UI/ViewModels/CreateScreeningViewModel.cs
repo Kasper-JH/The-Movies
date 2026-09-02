@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using TheMovies.Core.Models;
@@ -197,11 +198,52 @@ namespace TheMovies.UI.ViewModels
 
         // --- Hjælpemetoder ---
 
+        /// <summary>
+        /// Forsøger at parse klokkeslættet med streng validering.
+        /// Tillader kun formaterne "H:mm" og "HH:mm".
+        /// Minutter valideres implicit via formatstrengen "mm" (0-59).
+        /// Timer tjekkes eksplicit (0-23), da TryParseExact ikke begrænser timer.
+        /// </summary>
+        /// <param name="time">Parset TimeSpan ved succes</param>
+        /// <param name="errorMessage">Fejlbesked ved fiasko</param>
+        /// <returns>True hvis gyldigt, ellers false</returns>
+        private bool TryParseScreeningTime(out TimeSpan time, out string errorMessage)
+        {
+            errorMessage = string.Empty;
+            time = TimeSpan.Zero;
+
+            if (string.IsNullOrWhiteSpace(ScreeningTime))
+            {
+                errorMessage = "Klokkeslættet må ikke være tomt.";
+                return false;
+            }
+
+            // Tillad både "H:mm" (f.eks. 9:30) og "HH:mm" (f.eks. 14:00)
+            // Brug CultureInfo.InvariantCulture for at undgå problemer med komma vs. punktum
+            if (!TimeSpan.TryParseExact(ScreeningTime.Trim(), new[] { "h\\:mm", "hh\\:mm" },
+                                        CultureInfo.InvariantCulture, out time))
+            {
+                errorMessage = "Ugyldigt format – brug TT:MM (f.eks. 9:30 eller 14:00).";
+                return false;
+            }
+
+            // Timer er IKKE implicit begrænset af TryParseExact – vi tjekker dem selv
+            if (time.Hours < 0 || time.Hours > 23)
+            {
+                errorMessage = "Timer skal være mellem 0 og 23.";
+                return false;
+            }
+
+            // Minutter er implicit valideret via formatstrengen "mm", så intet yderligere tjek nødvendigt.
+
+            return true;
+        }
+
         // Opdaterer den viste beregning af sluttidspunkt (UC2 trin 7: varighed + 30 min)
         private void UpdateCalculatedEndTime()
         {
             // Hvis klokkeslættet er ugyldigt, viser vi en vejledende besked i stedet for en fejl
-            if (SelectedMovie == null || string.IsNullOrWhiteSpace(ScreeningTime) || !TimeSpan.TryParse(ScreeningTime, out var time))
+            if (SelectedMovie == null || string.IsNullOrWhiteSpace(ScreeningTime) || !TryParseScreeningTime(out var time, out _))
             {
                 CalculatedEndTime = "Udfyld film og tid (TT:MM) for at se beregning";
                 return;
@@ -222,16 +264,16 @@ namespace TheMovies.UI.ViewModels
             if (string.IsNullOrWhiteSpace(Director) || PremiereDate == null)
                 return false;
             // Tjek at klokkeslættet er gyldigt – ellers er knappen deaktiveret
-            return TimeSpan.TryParse(ScreeningTime, out _);
+            return TryParseScreeningTime(out _, out _);
         }
 
         // Hovedmetode: opretter en ny forestilling (UC2)
         private void CreateScreening()
         {
             // Håndtering af ugyldigt klokkeslæt – giver en venlig fejlbesked
-            if (!TimeSpan.TryParse(ScreeningTime, out var time))
+            if (!TryParseScreeningTime(out var time, out var parseError))
             {
-                StatusMessage = "FEJL: Klokkeslættet er ugyldigt – brug formatet TT:MM (f.eks. 20:30).";
+                StatusMessage = $"FEJL: {parseError}";
                 return;
             }
 
