@@ -16,7 +16,7 @@ namespace TheMovies.Core.Seed
         {
             // Faste biografer i systemet.
             var cinemas = new List<Cinema>();
-            string[] cinemaNames = { "Hjerm", "Videbæk", "Thorsminde", "Ræhr" };
+            string[] cinemaNames = { "The Movies Hjerm", "The Movies Videbæk", "The Movies Thorsminde", "The Movies Ræhr" };
 
             foreach (var name in cinemaNames)
             {
