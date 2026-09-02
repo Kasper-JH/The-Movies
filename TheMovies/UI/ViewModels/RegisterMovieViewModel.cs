@@ -4,8 +4,10 @@
  */
 using System;
 using System.ComponentModel;
+using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Windows.Controls;
 using System.Windows.Input;
 using TheMovies.Core.Models;
 using TheMovies.Core.Repositories;
@@ -18,6 +20,8 @@ namespace TheMovies.UI.ViewModels
         private readonly IMovieRepository _repository;
 
         private string _title = string.Empty;
+        private int _durationHours;
+        private int _durationMinutes;
         private int _duration;
         private string _genre = string.Empty;
         private string _statusMessage = string.Empty;
@@ -46,10 +50,40 @@ namespace TheMovies.UI.ViewModels
             }
         }
 
+        public int DurationMinutes
+        {
+            get => _durationMinutes;
+            set
+            {
+                if (_durationMinutes != value)
+                {
+                    _durationMinutes = value;
+                    OnPropertyChanged();
+
+                    Duration = _durationHours * 60 + _durationMinutes;
+                }
+            }
+        }
+
+        public int DurationHours
+        {
+            get => _durationHours;
+            set
+            {
+                if (_durationHours != value)
+                {
+                    _durationHours = value;
+                    OnPropertyChanged();
+
+                    Duration = _durationHours * 60 + _durationMinutes;
+                }
+            }
+        }
+
         public int Duration
         {
             get => _duration;
-            set
+            private set
             {
                 if (_duration != value)
                 {
@@ -124,7 +158,8 @@ namespace TheMovies.UI.ViewModels
 
             StatusMessage = $"Filmen '{Title}' er nu registreret!";
             Title = string.Empty;
-            Duration = 0;
+            DurationHours = 0;
+            DurationMinutes = 0;
             Genre = string.Empty;
         }
 
