@@ -27,9 +27,7 @@
                  Margin="0,5" VerticalAlignment="Center"/>
 
         <!-- Varighed -->
-        <Label Grid.Row="1" Grid.Column="0" Content="Varighed (min):" VerticalAlignment="Center"/>
-        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Duration, UpdateSourceTrigger=PropertyChanged}" 
-                 Margin="0,5" VerticalAlignment="Center"/>
+    
 
         <!-- Genre -->
         <Label Grid.Row="2" Grid.Column="0" Content="Genre:" VerticalAlignment="Center"/>
