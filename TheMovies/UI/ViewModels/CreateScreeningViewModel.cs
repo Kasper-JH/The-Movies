@@ -208,7 +208,9 @@ namespace TheMovies.UI.ViewModels
             }
 
             var start = ScreeningDate.Date + time;
-            var end = start.AddMinutes(SelectedMovie.Duration + 30); // 15 min reklamer + 15 min rengøring = 30 min
+            // Genbruger Screening.AdsAndCleaningMinutes (15 min reklamer + 15 min rengøring, UC2 trin 7)
+            // i stedet for at duplikere tallet 30 her (Single Source of Truth).
+            var end = start.AddMinutes(SelectedMovie.Duration + Screening.AdsAndCleaningMinutes);
             CalculatedEndTime = end.ToString("dd/MM/yyyy HH:mm");
         }
 
@@ -246,8 +248,21 @@ namespace TheMovies.UI.ViewModels
                 return;
             }
 
-            // Screening-konstruktoren beregner selv sluttidspunktet (UC2 trin 7)
-            var tentativeScreening = new Screening(SelectedMovie, SelectedCinema, SelectedHall, startTime);
+            // Screening-konstruktoren beregner selv sluttidspunktet (UC2 trin 7) og validerer
+            // desuden at den valgte sal hører til den valgte biograf. Sidstnævnte bør i praksis
+            // aldrig fejle her, da RefreshAvailableHalls() kun viser sale fra den valgte biograf -
+            // men fanges alligevel defensivt, så en fremtidig fejl i den logik giver en pæn
+            // besked i stedet for en ufanget exception.
+            Screening tentativeScreening;
+            try
+            {
+                tentativeScreening = new Screening(SelectedMovie, SelectedCinema, SelectedHall, startTime);
+            }
+            catch (ArgumentException ex)
+            {
+                StatusMessage = $"FEJL: {ex.Message}";
+                return;
+            }
 
             // UC2 undtagelsesflow 6a: tjek for overlap, før forestillingen oprettes
             if (_screeningRepository.HasOverlap(SelectedCinema, SelectedHall, tentativeScreening.StartTime, tentativeScreening.EndTime))
