@@ -5,8 +5,7 @@
 <Application x:Class="TheMovies.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:TheMovies"
-             StartupUri="TheMovies/Views/MainWindow.xaml">
+             xmlns:local="clr-namespace:TheMovies">
     <Application.Resources>
 
     </Application.Resources>
