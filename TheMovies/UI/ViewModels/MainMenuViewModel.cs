@@ -17,6 +17,7 @@ namespace TheMovies.UI.ViewModels
 {
     public class MainMenuViewModel : INotifyPropertyChanged
     {
+        // Vi behøver ikke kalde new repository her, da de allerede er oprettet i App.xaml.cs og sendt ind via constructor injection. Dette er en del af Dependency Injection (DI) mønstret.
         private readonly IMovieRepository _movieRepository;
         private readonly IScreeningRepository _screeningRepository;
         private string _statusMessage;
