@@ -4,7 +4,7 @@
  * opstart og forretningslogik, hvilket understøtter Single Responsibility Principle (SRP).
  * Repositories og ViewModels forbindes via constructor injection her, så ViewModels alene
  * afhænger af abstrakte interfaces frem for konkrete implementeringer ("new" repositories sendt med 
- * ind i constructor-kaldet til MainMenuViewModel, m.a.o.). Af dette får vi adgang til repositories 
+ * ind i constructor-kaldet til MainMenuViewModel, med andre ord). Af dette får vi adgang til repositories 
  * (og dermed CRUD-funktionalitet) fra ét enkelt sted og undgår at skulle oprette nye instanser af 
  * repositories i flere forskellige klasser efter behov. Dette følger også Dependency Inversion Principle (DIP), da 
  * vi afhænger af abstrakte interfaces (IMovieRepository og IScreeningRepository) frem for konkrete 
