@@ -1,6 +1,6 @@
 ﻿/*
  * SRP: Denne statiske klasse indeholder den faste, foruddefinerede liste af biografer
- * og deres sale, jf. UC2's note om at biograferne (Hjerm, Videbæk, Thorsminde, Ræhr)
+ * og deres sale, jf. UC2 noten om at biograferne (Hjerm, Videbæk, Thorsminde, Ræhr)
  * antages som fast data og ikke oprettes via en selvstændig use case.
  *
  */
@@ -20,9 +20,10 @@ namespace TheMovies.Core.Seed
 
             foreach (var name in cinemaNames)
             {
-                //Antallet af sale i hver biograf er fastlagt til
-                //6 her, men kunne ændres efter behov/udbygges til dynamisk behov senere 
-                //(sikkert lettere at opdatere gennem db, men scope creep for nuværende).
+                // Antallet af sale i hver biograf er fastlagt til
+                // 6 her, men kunne ændres efter behov/udbygges til dynamisk behov senere 
+                // (sikkert lettere at opdatere gennem db + mere sikkert ift GDPR-datasikkerhed, men
+                // scope creep for nuværende).
                 var cinema = new Cinema(name);
                 cinema.AddHall(new Hall(1));
                 cinema.AddHall(new Hall(2));
