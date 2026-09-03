@@ -47,13 +47,38 @@ namespace TheMovies.Core.Models
             EndTime = StartTime.AddMinutes(Movie.Duration + AdsAndCleaningMinutes);
         }
 
+        // Properties for Movie, Cinema, Hall, StartTime, and EndTime som indkapsler (OOP) de relevante data for en forestilling.
         public Movie Movie { get; set; }
         public Cinema Cinema { get; set; }
         public Hall Hall { get; set; }
         public DateTime StartTime { get; set; }
 
-        // Afledt attribut - beregnes i constructoren, sættes aldrig direkte udefra i normal brug.
+        // EndTime er en 'derived attribute', dvs. vi beregner den i constructoren ovenfor (films varighed+30m). 
         // Har en public setter udelukkende for at JSON-deserialisering kan genskabe objektet fra fil.
+        // Dette er potentielt et problem: Hvis man sætter EndTime til en værdi udefra (via public setter), der ikke stemmer overens med
+        // StartTime + Movie.Duration + AdsAndCleaningMinutes, men er nødvendig for at kunne læse objektet fra fil.
         public DateTime EndTime { get; set; }
+
+        // Domæneregel (UC2 undtagelsesflow 6a): To forestillinger overlapper, hvis de er i
+        // samme biograf og sal, og deres tidsrum skærer hinanden. Dette er domænelogik, der hører
+        // til i model-laget, og ikke i persistenslaget (repository), da det er en regel for, hvordan to
+        // forestillinger relaterer sig til hinanden. Dog kræver denne sammenligning at vi også henter noget data at 
+        // sammenligne med, hvilket er repositoriets ansvar. Derfor er det en kombination af model-lag (logik) og repository-lag (håndtering af data)
+        public bool OverlapsWith(Screening other)
+        {
+            // Hvis vi ikke har en anden forestilling at sammenligne med, så kan de ikke overlappe.
+            if (other == null)
+                return false;
+
+            // Sammenligner biografnavn og salnummer for at afgøre, om de er i samme biograf og sal.
+            bool sameLocation = Cinema.Name == other.Cinema.Name &&
+                                 Hall.HallNumber == other.Hall.HallNumber;
+            // Hvis de ikke er i samme biograf og sal, kan de ikke overlappe.
+            if (!sameLocation)
+                return false;
+
+            // To tidsrum overlapper, hvis det ene starter, før det andet slutter, og omvendt.
+            return StartTime < other.EndTime && other.StartTime < EndTime;
+        }
     }
 }

@@ -100,6 +100,19 @@ namespace TheMovies.Core.Models
         // Event der bruges til at underrette UI om ændringer
         public event PropertyChangedEventHandler PropertyChanged;
 
+        // Domæneregel (UC1 undtagelsesflow 4a): to film regnes som duplikater, hvis de har
+        // samme titel, varighed og genre (case-insensitive på tekstfelterne). Lå tidligere
+        // som en LINQ-forespørgsel inde i FileMovieRepository.IsMovieRegistered() - flyttet
+        // hertil, da selve reglen for hvad "duplikat" betyder er domænelogik, ikke noget der
+        // hører til i persistenslaget. Samme mønster som Screening.OverlapsWith().
+        public bool IsDuplicateOf(Movie other)
+        {
+            return other != null &&
+                   string.Equals(Title, other.Title, StringComparison.OrdinalIgnoreCase) &&
+                   Duration == other.Duration &&
+                   string.Equals(Genre, other.Genre, StringComparison.OrdinalIgnoreCase);
+        }
+
         // Hjælpemetode der kalder PropertyChanged
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {

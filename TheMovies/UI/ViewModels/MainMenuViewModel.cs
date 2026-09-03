@@ -12,7 +12,6 @@ using System.Windows.Input;
 using TheMovies.Core.Repositories;
 using TheMovies.Core.Seed;
 using TheMovies.UI.Commands;
-using TheMovies.UI.Views;
 
 namespace TheMovies.UI.ViewModels
 {
@@ -36,6 +35,14 @@ namespace TheMovies.UI.ViewModels
             // Opdater statusbesked til View ved opstart
             UpdateStatusMessage();
         }
+
+        // MVVM-separation: ViewModel'en må ikke selv oprette Window-objekter eller kalde
+        // ShowDialog() - det er en View-specifik detalje. I stedet bygger ViewModel'en den
+        // færdige child-ViewModel (som er præsentationslogik, og derfor fint at kende til
+        // herfra) og rejser et event. View'et (MainMenuView.xaml.cs) lytter på eventet og
+        // står selv for at oprette det rigtige vindue og vise det.
+        public event EventHandler<RegisterMovieViewModel>? RegisterMovieRequested;
+        public event EventHandler<CreateScreeningViewModel>? CreateScreeningRequested;
 
         public ICommand RegisterMovieCommand { get; }
         public ICommand CreateScreeningCommand { get; }
@@ -77,12 +84,16 @@ namespace TheMovies.UI.ViewModels
                 : "Ingen film registreret – registrer en film først!";
         }
 
-        // Åbner vinduet til registrering af film (UC1)
+        // Åbner vinduet til registrering af film (UC1).
+        // ViewModel'en opretter kun den tilhørende ViewModel og rejser eventet - View'et
+        // (code-behind) opretter selve Window'et og kalder ShowDialog(). Da ShowDialog()
+        // er blokerende, er koden herefter (UpdateStatusMessage osv.) først med til at
+        // køre når View'ets event-handler - og dermed selve dialogen - er færdig, ligesom
+        // ved det oprindelige direkte kald.
         private void OpenRegisterView()
         {
-            var view = new RegisterMovieView();
-            view.DataContext = new RegisterMovieViewModel(_movieRepository);
-            view.ShowDialog();
+            var viewModel = new RegisterMovieViewModel(_movieRepository);
+            RegisterMovieRequested?.Invoke(this, viewModel);
 
             // Når vinduet lukkes, opdateres status – der kan nu være kommet en film
             UpdateStatusMessage();
@@ -90,7 +101,7 @@ namespace TheMovies.UI.ViewModels
             ((RelayCommand)CreateScreeningCommand).RaiseCanExecuteChanged();
         }
 
-        // Åbner vinduet til oprettelse af forestilling (UC2)
+        // Åbner vinduet til oprettelse af forestilling (UC2). Samme mønster som ovenfor.
         private void OpenCreateScreeningView()
         {
             if (!HasMovies())
@@ -102,9 +113,8 @@ namespace TheMovies.UI.ViewModels
 
             // Sæt seed data, se CinemaSeed.cs
             var cinemas = CinemaSeed.GetAll();
-            var view = new CreateScreeningView();
-            view.DataContext = new CreateScreeningViewModel(_movieRepository, _screeningRepository, cinemas);
-            view.ShowDialog();
+            var viewModel = new CreateScreeningViewModel(_movieRepository, _screeningRepository, cinemas);
+            CreateScreeningRequested?.Invoke(this, viewModel);
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

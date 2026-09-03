@@ -25,31 +25,25 @@ namespace TheMovies.Core.Repositories
             _screenings = LoadFromFile();
         }
 
-        // Henter alle forestillinger
+        // Henter alle forestillinger. Returnerer en tom liste hvis der ikke er nogen.
         public IEnumerable<Screening> GetAll()
         {
             return _screenings ?? new List<Screening>();
         }
 
-        // Tjekker om et tidsrum overlapper en eksisterende forestilling i samme
-        // biograf/sal, jf. UC2 undtagelsesflow 6a.
-        public bool HasOverlap(Cinema cinema, Hall hall, DateTime start, DateTime end)
+        // Tjekker om en kandidat-forestilling overlapper en eksisterende forestilling i samme
+        // biograf/sal, jf. UC2 undtagelsesflow 6a. Selve overlap-reglen ligger på
+        // Screening.OverlapsWith() (domænelogik) - her itererer vi blot de eksisterende
+        // forestillinger og spørger hver af dem via deres egen OverLapsWith(), dvs. vi arbejder her med at 
+        // hente (specifikke) forestillinger.
+        public bool HasOverlap(Screening candidate)
         {
-            if (cinema == null || hall == null)
+            if (candidate == null)
                 return false;
 
             foreach (var existing in _screenings)
             {
-                bool sameLocation = existing.Cinema.Name == cinema.Name &&
-                                     existing.Hall.HallNumber == hall.HallNumber;
-
-                if (!sameLocation)
-                    continue;
-
-                // To tidsrum overlapper, hvis det ene starter, før det andet slutter, og omvendt
-                bool overlaps = start < existing.EndTime && existing.StartTime < end;
-
-                if (overlaps)
+                if (existing.OverlapsWith(candidate))
                     return true;
             }
 
@@ -59,11 +53,13 @@ namespace TheMovies.Core.Repositories
         // Gemmer en ny forestilling i datakilden (både in-memory og til fil)
         public void SaveScreening(Screening screening)
         {
+            // Hvis vi har screenings, så tilføjer vi dem in-memory.
             if (screening == null)
                 throw new ArgumentNullException(nameof(screening));
 
             _screenings.Add(screening);
 
+            // Forsøger at gemme til fil.
             try
             {
                 SaveToFile();
@@ -75,12 +71,14 @@ namespace TheMovies.Core.Repositories
             }
         }
 
-        // Gemmer alle ændringer til den fysiske fil (persistens)
-        public void SaveToFile()
+        // Privat hjælpemetode: Skriver den nuværende in-memory liste til fil.
+        // Kaldes internt af SaveScreening ovenfor
+        private void SaveToFile()
         {
             var options = new JsonSerializerOptions { WriteIndented = true };
             string json = JsonSerializer.Serialize(_screenings, options);
 
+            // Forsøg at skrive til fil, og kast eventuelle IO-fejl. 
             try
             {
                 File.WriteAllText(_filePath, json);
@@ -96,6 +94,7 @@ namespace TheMovies.Core.Repositories
         // Privat metode: Indlæser forestillinger fra JSON-filen
         private List<Screening> LoadFromFile()
         {
+            // Hvis filen ikke eksisterer, så returneres en ny, tom liste (f.eks. første gang programmet køres).
             if (!File.Exists(_filePath))
                 return new List<Screening>();
 

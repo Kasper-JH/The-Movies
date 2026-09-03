@@ -307,7 +307,7 @@ namespace TheMovies.UI.ViewModels
             }
 
             // UC2 undtagelsesflow 6a: tjek for overlap, før forestillingen oprettes
-            if (_screeningRepository.HasOverlap(SelectedCinema, SelectedHall, tentativeScreening.StartTime, tentativeScreening.EndTime))
+            if (_screeningRepository.HasOverlap(tentativeScreening))
             {
                 StatusMessage = "FEJL: Tidspunktet er optaget i den valgte sal – vælg et nyt tidspunkt.";
                 return;

@@ -26,7 +26,7 @@ namespace TheMovies.Core.Repositories
             _movies = LoadFromFile();
         }
 
-        // Henter alle film (bruges ved opstart til at tælle)
+        // Henter alle film fra datakilden
         public IEnumerable<Movie> GetAll()
         {
             return _movies ?? new List<Movie>(); // Hvis listen er null, returneres en tom liste
@@ -52,16 +52,14 @@ namespace TheMovies.Core.Repositories
             }
         }
 
-        // Tjekker om en film allerede er registreret (undgår dubletter)
+        // Tjekker om en film allerede er registreret (undgår dubletter). Selve duplikat-reglen
+        // ligger på Movie.IsDuplicateOf() (domænelogik) - her itererer vi blot filmene og
+        // spørger hver af dem, samme mønster som FileScreeningRepository.HasOverlap().
         public bool IsMovieRegistered(Movie movie)
         {
             if (movie == null)
                 return false;
-            // Bruger LINQ's Any-metode til at tjekke om nogen film matcher
-            return _movies.Any(m =>
-                string.Equals(m.Title, movie.Title, StringComparison.OrdinalIgnoreCase) &&
-                m.Duration == movie.Duration &&
-                string.Equals(m.Genre, movie.Genre, StringComparison.OrdinalIgnoreCase));
+            return _movies.Any(m => m.IsDuplicateOf(movie));
         }
 
         // Opdaterer en eksisterende film (bruges i UC2 til at sætte instruktør/premieredato).
@@ -89,8 +87,10 @@ namespace TheMovies.Core.Repositories
             SaveToFile();
         }
 
-        // Gemmer alle ændringer til den fysiske fil (persistens)
-        public void SaveToFile()
+        // Privat hjælpemetode: skriver den aktuelle in-memory liste til fil.
+        // Kaldes internt af SaveMovie og UpdateMovie - er ikke en del af IMovieRepository,
+        // da ViewModels ikke skal kunne kalde ren fil-persistens uden om domænehandlingerne.
+        private void SaveToFile()
         {
             var options = new JsonSerializerOptions { WriteIndented = true }; // Gør JSON læselig
             string json = JsonSerializer.Serialize(_movies, options);

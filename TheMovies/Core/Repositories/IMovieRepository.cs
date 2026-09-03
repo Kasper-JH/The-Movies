@@ -16,13 +16,10 @@ namespace TheMovies.Core.Repositories
         // Gemmer en ny film i datakilden (både in-memory og til fil)
         void SaveMovie(Movie movie);
 
-        // Tjekker om en film allerede er registreret (undgår dubletter)
+        // Tjekker om en film allerede er registreret (undgår dubletter, jf. UC1 undtagelsesflow 4a.)
         bool IsMovieRegistered(Movie movie);
 
-        // Opdaterer en eksisterende film (bruges i UC2 til at sætte instruktør/premieredato)
+        // Opdaterer en eksisterende film (bruges i UC2 til at sætte instruktør/premieredato på en film)
         void UpdateMovie(Movie movie);
-
-        // Gemmer alle ændringer til den fysiske fil (persistens)
-        void SaveToFile();
     }
 }
