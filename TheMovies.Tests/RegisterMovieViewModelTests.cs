@@ -21,7 +21,7 @@ namespace TheMovies.Tests
 
 
         [Fact]
-        public void RegisterMovie_GemmerFilmen_NaarFelterErUdfyldt()
+        public void RegisterMovie_OnMovieInput_IsMovieSavedWhenInputIsValid()
         {
             var repository = new FakeMovieRepository();
             var viewModel = CreateViewModel(repository);
@@ -35,7 +35,7 @@ namespace TheMovies.Tests
         }
 
         [Fact]
-        public void RegisterMovie_RydderFelterne_EfterGemning()
+        public void RegisterMovie_AfterMovieInput_AreAllFieldsClearedAfterSuccessfulInput()
         {
             var repository = new FakeMovieRepository();
             var viewModel = CreateViewModel(repository);
@@ -50,7 +50,7 @@ namespace TheMovies.Tests
 
 
         [Fact]
-        public void RegisterMovie_GemmerIkkeDublet_NaarFilmenFindes()
+        public void RegisterMovie_OnMovieInput_ThrowsErrorMessageIfDuplicateMovieIsFound()
         {
             var repository = new FakeMovieRepository();
             repository.Movies.Add(new Movie("Inception", 148, "Sci-Fi"));
@@ -68,7 +68,7 @@ namespace TheMovies.Tests
         [InlineData("Inception", 0, "Sci-Fi")]   // varighed 0
         [InlineData("Inception", -5, "Sci-Fi")]  // negativ varighed
         [InlineData("Inception", 148, "")]       // manglende genre
-        public void CanExecute_ErFalse_NaarInputErUgyldigt(string title, int duration, string genre)
+        public void CanExecute_IsFalseWhenInputIsInvalid(string title, int duration, string genre)
         {
             var viewModel = CreateViewModel(new FakeMovieRepository(), title, duration, genre);
 
@@ -76,7 +76,7 @@ namespace TheMovies.Tests
         }
 
         [Fact]
-        public void CanExecute_ErTrue_NaarAlleFelterErGyldige()
+        public void CanExecute_IsTrueWhenInputIsValid()
         {
             var viewModel = CreateViewModel(new FakeMovieRepository());
 
@@ -84,13 +84,13 @@ namespace TheMovies.Tests
         }
 
         [Fact]
-        public void Constructor_KasterArgumentNullException_NaarRepositoryErNull()
+        public void Constructor_IfRepositoryIsNull_ThrowsArgumentNullException()
         {
             Assert.Throws<ArgumentNullException>(() => new RegisterMovieViewModel(null!));
         }
 
         [Fact]
-        public void Constructor_VisserAntalIndlaesteFilm()
+        public void Constructor_OnStartup_ShowsNumberOfLoadedMovies()
         {
             var repository = new FakeMovieRepository();
             repository.Movies.Add(new Movie("Inception", 148, "Sci-Fi"));

@@ -5,7 +5,7 @@ namespace TheMovies.Tests
 	public class ScreeningTests
 	{
 		[Fact]
-		public void EndTime_ErStartPlusVarighedPlus30Minutter()
+		public void OnNewScreening_WhenCalculatingRunningTime_IsEndTimeCorrect()
 		{
 			var movie = new Movie("Inception", 148, "Sci-Fi");
 			var cinema = new Cinema("Odense");
