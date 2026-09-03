@@ -16,7 +16,15 @@ namespace TheMovies.Core.Models
         private string _title;
         private int _duration;
         private string _genre;
-        private string? _director;
+
+        // "Director" er først en (brugt) del af Movie.cs under UC2 (UC2, trin 4, angiv instruktør), men et
+        // Movie-objekt skal stadig kunne oprettes (registreres) under UC1, dvs. uden instruktør.
+        // Derfor er Director sat til at være "string.Empty" som default, dvs. indtil brugeren vælger
+        // (modificerer) en film og angiver instruktør under UC2.
+        // Kort sagt er værdien tom som default (UC1) indtil den konkret skal bruges (UC2), og dermed kan vi
+        // oprette de samme Movie-objekter under både UC1 og UC2.
+        private string _director = string.Empty;
+        // Og samme gør sig gældende med premiereDate (UC2, trin 5, angiv premieredato).
         private DateTime? _premiereDate;
 
         // Tom constructor til JSON-deserialisering (når filen læses)

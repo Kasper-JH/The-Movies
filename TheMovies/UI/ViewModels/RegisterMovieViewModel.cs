@@ -1,7 +1,8 @@
 ﻿/*
  * SRP: Denne ViewModel står for præsentationslogikken til registrering af film (UC1).
- * Den indeholder al logik til at oprette en ny film, validere input, tjekke for dubletter
- * og gemme filmen via repository'et.
+ * ViewModellen indeholder al logik til at validere input, bruge repository'ets 
+ * IsMovieRegistered()-metode til at tjekke for dubletter (via modellens 
+ * IsDuplicateOf()-regel) og gemme filmen via repository'et.
  */
 
 using System;
