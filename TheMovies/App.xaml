@@ -1,6 +1,6 @@
 ﻿<!--
     SRP: App.xaml indeholder kun resurser (ingen her).
-    Startup håndteres i App.xaml.cs for at kunne injicere afhængigheder.
+    Startup håndteres i App.xaml.cs for at kunne injicere afhængigheder (via composition root).
 -->
 <Application x:Class="TheMovies.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"

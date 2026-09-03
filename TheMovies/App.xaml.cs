@@ -1,7 +1,7 @@
 ﻿/*
  * SRP: Denne klasse står for opstart af applikationen (composition root).
  * Her oprettes repositories (så vi kan arbejde med vores data) og 
- * startmenuen med tilhørende ViewModel.
+ * startmenuen (MainMenu) med tilhørende ViewModel.
  * 
  */
 using System;
