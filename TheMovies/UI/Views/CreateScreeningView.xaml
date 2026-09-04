@@ -67,7 +67,7 @@
         <!-- Beregnet sluttidspunkt (jf. UC2 trin 7) -->
         <Label Grid.Row="6" Grid.Column="0" Content="Sluttidspunkt (beregnet):" VerticalAlignment="Center"/>
         <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding CalculatedEndTime}" 
-                   VerticalAlignment="Center" Margin="0,5" FontWeight="Bold"/>
+                   VerticalAlignment="Center" Margin="0,5" FontWeight="Bold" TextWrapping="Wrap"/>
 
         <!-- Opret-knap (deaktiveres indtil alle felter er udfyldt) -->
         <Button Grid.Row="7" Grid.ColumnSpan="2" Content="Opret Forestilling"

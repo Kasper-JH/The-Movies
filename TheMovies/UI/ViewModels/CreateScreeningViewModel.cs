@@ -227,37 +227,20 @@ namespace TheMovies.UI.ViewModels
         // Forsøger at parse klokkeslættet med strengere validering end tidligere.
         // Tillader kun formaterne "H:mm" og "HH:mm".
         // Minutter valideres implicit via formatstrengen "mm" (0-59).
-        // Timer tjekkes eksplicit (0-23), da TryParseExact ikke begrænser timer.
+        // Timer valideres implicit via formatstrengen "H"/"HH"(0-23).
         private bool TryParseScreeningTime(out TimeSpan time, out string errorMessage)
         {
             errorMessage = string.Empty;
             time = TimeSpan.Zero;
-
-            // Tjek om feltet er tomt - brugeren skal have en klar fejlbesked.
-            if (string.IsNullOrWhiteSpace(ScreeningTime))
-            {
-                errorMessage = "Klokkeslættet må ikke være tomt.";
-                return false;
-            }
 
             // Tillad både "H:mm" (f.eks. 9:30) og "HH:mm" (f.eks. 14:00)
             // Brug CultureInfo.InvariantCulture for at undgå problemer med komma vs. punktum.
             if (!TimeSpan.TryParseExact(ScreeningTime.Trim(), new[] { "h\\:mm", "hh\\:mm" },
                                         CultureInfo.InvariantCulture, out time))
             {
-                errorMessage = "Ugyldigt format – brug TT:MM (f.eks. 9:30 eller 14:00).";
+                errorMessage = "Ugyldigt format – brug TT:MM (f.eks. 9:30 eller 14:00). Timer skal være mellem 0 og 23.";
                 return false;
             }
-
-            // Timer er IKKE implicit begrænset af TryParseExact – vi tjekker dem selv.
-            // Dette sikrer at brugeren ikke kan skrive f.eks. 25:00.
-            if (time.Hours < 0 || time.Hours > 23)
-            {
-                errorMessage = "Timer skal være mellem 0 og 23.";
-                return false;
-            }
-
-            // Minutter er implicit valideret via formatstrengen "mm", så intet yderligere tjek nødvendigt.
 
             return true;
         }
