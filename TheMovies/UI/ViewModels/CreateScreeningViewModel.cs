@@ -263,10 +263,10 @@ namespace TheMovies.UI.ViewModels
         }
 
         // Opdaterer den viste beregning af sluttidspunkt (UC2 trin 7: varighed + 30 min).
-        // Bemærk: Denne metode kaldes ved hvert tastetryk (via ScreeningTime/ScreeningDate settere),
+        // Denne metode kaldes ved hvert tastetryk (via ScreeningTime/ScreeningDate settere),
         // og skal derfor KUN opdatere CalculatedEndTime - ikke StatusMessage. StatusMessage er
         // forbeholdt beskeder ved konkrete handlinger (indlæsning, oprettelse), så brugeren ikke
-        // ser en "FEJL"-besked i statuslinjen bare fordi de er midt i at skrive et klokkeslæt.
+        // ser en "FEJL"-besked i statuslinjen unødvendigt.
         private void UpdateCalculatedEndTime()
         {
             // Hvis klokkeslættet er ugyldigt (eller ikke udfyldt endnu), viser vi en vejledende
@@ -296,7 +296,7 @@ namespace TheMovies.UI.ViewModels
             CalculatedEndTime = end.ToString("dd/MM/yyyy HH:mm");
         }
 
-        // Validering: knappen er kun aktiv når alle felter er udfyldt korrekt.
+        // Validering: Knappen er kun aktiv når alle felter er udfyldt korrekt.
         private bool CanCreateScreening()
         {
             // Tjek at alle valg er truffet.
