@@ -263,29 +263,27 @@ namespace TheMovies.UI.ViewModels
         }
 
         // Opdaterer den viste beregning af sluttidspunkt (UC2 trin 7: varighed + 30 min).
+        // Bemærk: Denne metode kaldes ved hvert tastetryk (via ScreeningTime/ScreeningDate settere),
+        // og skal derfor KUN opdatere CalculatedEndTime - ikke StatusMessage. StatusMessage er
+        // forbeholdt beskeder ved konkrete handlinger (indlæsning, oprettelse), så brugeren ikke
+        // ser en "FEJL"-besked i statuslinjen bare fordi de er midt i at skrive et klokkeslæt.
         private void UpdateCalculatedEndTime()
         {
-            // Hvis klokkeslættet er ugyldigt, viser vi en vejledende besked i stedet for en fejl
-            // Dette giver brugeren en hjælpsom besked, mens de skriver.
+            // Hvis klokkeslættet er ugyldigt (eller ikke udfyldt endnu), viser vi en vejledende
+            // besked i CalculatedEndTime i stedet for en fejl - dette giver brugeren en hjælpsom
+            // besked, mens de skriver, uden at det ligner en "rigtig" fejl i statuslinjen.
             if (SelectedMovie == null || string.IsNullOrWhiteSpace(ScreeningTime))
             {
                 CalculatedEndTime = "Udfyld film og tid (TT:MM) for at se beregning";
-                StatusMessage = string.Empty; // Ryd eventuel gammel fejl.
                 return;
             }
 
-            // Hvis parsing fejler, vis fejlbeskeden i både CalculatedEndTime og StatusMessage.
+            // Hvis parsing fejler, vis fejlbeskeden i CalculatedEndTime (kun her - se kommentar ovenfor).
             if (!TryParseScreeningTime(out var time, out var errorMessage))
             {
-                // Måske overkill med samme fejlbesked i begge felter? 
-                CalculatedEndTime = $"FEJL: {errorMessage}"; // Vis den præcise fejl.
-                StatusMessage = $"FEJL: {errorMessage}";
+                CalculatedEndTime = $"FEJL: {errorMessage}";
                 return;
             }
-
-            // Ryd fejlbeskeden, hvis parsing lykkes.
-            if (StatusMessage.StartsWith("FEJL:"))
-                StatusMessage = string.Empty;
 
             // Sæt dato og tid sammen til et DateTime-objekt.
             var start = ScreeningDate.Date + time;
