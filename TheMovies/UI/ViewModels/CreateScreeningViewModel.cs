@@ -39,9 +39,10 @@ namespace TheMovies.UI.ViewModels
         // (modificerer) en film og angiver instruktør under UC2.
         // Kort sagt er værdien tom som default (UC1) indtil den konkret skal bruges (UC2), og dermed kan vi
         // oprette de samme Movie-objekter under både UC1 og UC2.
-        private string _director = string.Empty; 
+        private string _director = string.Empty;
         // Og samme gør sig gældende med premiereDate (UC2, trin 5, angiv premieredato).
         private DateTime? _premiereDate;
+        // ScreeningDate defaultes til i dag, så brugeren ikke skal vælge en dato hver gang.
         private DateTime _screeningDate = DateTime.Today;
         private string _screeningTime = string.Empty;
         private string _statusMessage = string.Empty;
@@ -65,20 +66,20 @@ namespace TheMovies.UI.ViewModels
             // og knappen er kun aktiv hvis CanCreateScreening() returnerer true.
             _createScreeningCommand = new RelayCommand(_ => CreateScreening(), _ => CanCreateScreening());
 
-            // Opretter tomme lister til UI-binding (ComboBox'er i CreateScreeningView.xaml)
+            // Opretter tomme lister til UI-binding (ComboBox'er i CreateScreeningView.xaml).
             AvailableMovies = new ObservableCollection<Movie>();
             AvailableHalls = new ObservableCollection<Hall>();
 
-            // Indlæser film fra repository og viser antal i status
+            // Indlæser film fra repository og viser antal i statusbeskeden.
             LoadMovies();
         }
 
         // Kollektioner til UI-binding
-        public ObservableCollection<Movie> AvailableMovies { get; }        // Liste over film i dropdown
-        public IReadOnlyList<Cinema> AvailableCinemas => _cinemas;         // Liste over biografer i dropdown
-        public ObservableCollection<Hall> AvailableHalls { get; }          // Liste over sale i dropdown
+        public ObservableCollection<Movie> AvailableMovies { get; }        // Liste over film i dropdown.
+        public IReadOnlyList<Cinema> AvailableCinemas => _cinemas;         // Liste over biografer i dropdown.
+        public ObservableCollection<Hall> AvailableHalls { get; }          // Liste over sale i dropdown.
 
-        // --- Properties med notifikation ---
+        // Properties - disse bindes til UI'et (CreateScreeningView.xaml).
 
         public Movie SelectedMovie
         {
@@ -86,19 +87,20 @@ namespace TheMovies.UI.ViewModels
             set
             {
                 // Tjekker om værdien rent faktisk har ændret sig.
-                // Hvis ikke, gør vi ingenting - det sparer unødvendige opdateringer.
+                // Hvis ikke, gør vi ingenting, men hvis den er ændret, så sætter vi
+                // _selectedMovie backing fieldet til den værdi.
                 if (_selectedMovie != value)
                 {
                     _selectedMovie = value;
-                    OnPropertyChanged(); // Fortæller UI'et at valget er ændret
+                    OnPropertyChanged(); // Og fortæller UI'et at valget er ændret (og at UI skal opdateres til at fremvise den nye valgte film).
 
-                    // Forudfyld instruktør og premieredato, hvis filmen allerede har dem
-                    // Null-coalescing operator (??): Enten har SelectedMovie en Director som assignes, ellers sæt til tom streng
+                    // Forudfyld dernæst instruktør og premieredato, hvis filmen allerede har dem (dvs. er et tidligere fuldt udfyldt Movie-objekt).
+                    // Null-coalescing operator (??): Enten har SelectedMovie en Director som assignes, ellers sæt til tom streng.
                     Director = _selectedMovie?.Director ?? string.Empty;
                     // Sætter premieredatoen fra den valgte film – eller null hvis ingen film er valgt.
                     PremiereDate = _selectedMovie?.PremiereDate;
-                    UpdateCalculatedEndTime(); // Opdater sluttidspunkt
-                    _createScreeningCommand.RaiseCanExecuteChanged(); // Tjek om knappen kan aktiveres
+                    UpdateCalculatedEndTime(); // Opdater sluttidspunkt.
+                    _createScreeningCommand.RaiseCanExecuteChanged(); // Tjek om knappen kan aktiveres.
                 }
             }
         }
@@ -112,7 +114,7 @@ namespace TheMovies.UI.ViewModels
                 {
                     _selectedCinema = value;
                     OnPropertyChanged();
-                    RefreshAvailableHalls(); // Opdater listen over sale, når biografen ændres
+                    RefreshAvailableHalls(); // Opdater listen over sale, når biografen ændres.
                     _createScreeningCommand.RaiseCanExecuteChanged();
                 }
             }
@@ -169,7 +171,7 @@ namespace TheMovies.UI.ViewModels
                 {
                     _screeningDate = value;
                     OnPropertyChanged();
-                    UpdateCalculatedEndTime(); // Sluttidspunktet afhænger af datoen
+                    UpdateCalculatedEndTime(); // Sluttidspunktet afhænger af datoen.
                     _createScreeningCommand.RaiseCanExecuteChanged();
                 }
             }
@@ -184,7 +186,7 @@ namespace TheMovies.UI.ViewModels
                 {
                     _screeningTime = value;
                     OnPropertyChanged();
-                    UpdateCalculatedEndTime(); // Sluttidspunktet afhænger af klokkeslættet
+                    UpdateCalculatedEndTime(); // Sluttidspunktet afhænger af klokkeslættet.
                     _createScreeningCommand.RaiseCanExecuteChanged();
                 }
             }
@@ -203,7 +205,7 @@ namespace TheMovies.UI.ViewModels
             }
         }
 
-        // Viser det beregnede sluttidspunkt – jf. UC2 trin 7
+        // Viser det beregnede sluttidspunkt – jf. UC2 trin 7.
         public string CalculatedEndTime
         {
             get => _calculatedEndTime;
@@ -217,26 +219,21 @@ namespace TheMovies.UI.ViewModels
             }
         }
 
-        // Eksponerer kommandoen til UI'et (knappen binder til denne)
+        // Eksponerer kommandoen til UI'et (knappen binder til denne).
         public ICommand CreateScreeningCommand => _createScreeningCommand;
 
         // --- Hjælpemetoder ---
 
-        /// <summary>
-        /// Forsøger at parse klokkeslættet med streng validering.
-        /// Tillader kun formaterne "H:mm" og "HH:mm".
-        /// Minutter valideres implicit via formatstrengen "mm" (0-59).
-        /// Timer tjekkes eksplicit (0-23), da TryParseExact ikke begrænser timer.
-        /// </summary>
-        /// <param name="time">Parset TimeSpan ved succes</param>
-        /// <param name="errorMessage">Fejlbesked ved fiasko</param>
-        /// <returns>True hvis gyldigt, ellers false</returns>
+        // Forsøger at parse klokkeslættet med strengere validering end tidligere.
+        // Tillader kun formaterne "H:mm" og "HH:mm".
+        // Minutter valideres implicit via formatstrengen "mm" (0-59).
+        // Timer tjekkes eksplicit (0-23), da TryParseExact ikke begrænser timer.
         private bool TryParseScreeningTime(out TimeSpan time, out string errorMessage)
         {
             errorMessage = string.Empty;
             time = TimeSpan.Zero;
 
-            // Tjek om feltet er tomt - brugeren skal have en klar fejlbesked
+            // Tjek om feltet er tomt - brugeren skal have en klar fejlbesked.
             if (string.IsNullOrWhiteSpace(ScreeningTime))
             {
                 errorMessage = "Klokkeslættet må ikke være tomt.";
@@ -244,7 +241,7 @@ namespace TheMovies.UI.ViewModels
             }
 
             // Tillad både "H:mm" (f.eks. 9:30) og "HH:mm" (f.eks. 14:00)
-            // Brug CultureInfo.InvariantCulture for at undgå problemer med komma vs. punktum
+            // Brug CultureInfo.InvariantCulture for at undgå problemer med komma vs. punktum.
             if (!TimeSpan.TryParseExact(ScreeningTime.Trim(), new[] { "h\\:mm", "hh\\:mm" },
                                         CultureInfo.InvariantCulture, out time))
             {
@@ -252,8 +249,8 @@ namespace TheMovies.UI.ViewModels
                 return false;
             }
 
-            // Timer er IKKE implicit begrænset af TryParseExact – vi tjekker dem selv
-            // Dette sikrer at brugeren ikke kan skrive f.eks. 25:00
+            // Timer er IKKE implicit begrænset af TryParseExact – vi tjekker dem selv.
+            // Dette sikrer at brugeren ikke kan skrive f.eks. 25:00.
             if (time.Hours < 0 || time.Hours > 23)
             {
                 errorMessage = "Timer skal være mellem 0 og 23.";
@@ -265,59 +262,75 @@ namespace TheMovies.UI.ViewModels
             return true;
         }
 
-        // Opdaterer den viste beregning af sluttidspunkt (UC2 trin 7: varighed + 30 min)
+        // Opdaterer den viste beregning af sluttidspunkt (UC2 trin 7: varighed + 30 min).
         private void UpdateCalculatedEndTime()
         {
             // Hvis klokkeslættet er ugyldigt, viser vi en vejledende besked i stedet for en fejl
-            // Dette giver brugeren en hjælpsom besked, mens de skriver
-            if (SelectedMovie == null || string.IsNullOrWhiteSpace(ScreeningTime) || !TryParseScreeningTime(out var time, out _))
+            // Dette giver brugeren en hjælpsom besked, mens de skriver.
+            if (SelectedMovie == null || string.IsNullOrWhiteSpace(ScreeningTime))
             {
                 CalculatedEndTime = "Udfyld film og tid (TT:MM) for at se beregning";
+                StatusMessage = string.Empty; // Ryd eventuel gammel fejl.
                 return;
             }
 
-            // Sæt dato og tid sammen til et DateTime-objekt
+            // Hvis parsing fejler, vis fejlbeskeden i både CalculatedEndTime og StatusMessage.
+            if (!TryParseScreeningTime(out var time, out var errorMessage))
+            {
+                // Måske overkill med samme fejlbesked i begge felter? 
+                CalculatedEndTime = $"FEJL: {errorMessage}"; // Vis den præcise fejl.
+                StatusMessage = $"FEJL: {errorMessage}";
+                return;
+            }
+
+            // Ryd fejlbeskeden, hvis parsing lykkes.
+            if (StatusMessage.StartsWith("FEJL:"))
+                StatusMessage = string.Empty;
+
+            // Sæt dato og tid sammen til et DateTime-objekt.
             var start = ScreeningDate.Date + time;
 
-            // Genbruger Screening.AdsAndCleaningMinutes (15 min reklamer + 15 min rengøring, UC2 trin 7)
-            // i stedet for at duplikere tallet 30 her (Single Source of Truth).
+            // Genbruger Screening.AdsAndCleaningMinutes fra modellen ift. de ekstra 30 minutter
+            // en forestilling tager (så vi har single source of truth ift. dette, fra model-laget).
             var end = start.AddMinutes(SelectedMovie.Duration + Screening.AdsAndCleaningMinutes);
 
-            // Formater til dansk datoformat med klokkeslæt
+            // Formater til dansk datoformat med klokkeslæt.
             CalculatedEndTime = end.ToString("dd/MM/yyyy HH:mm");
         }
 
-        // Validering: knappen er kun aktiv når alle felter er udfyldt korrekt
+        // Validering: knappen er kun aktiv når alle felter er udfyldt korrekt.
         private bool CanCreateScreening()
         {
-            // Tjek at alle valg er truffet
+            // Tjek at alle valg er truffet.
             if (SelectedMovie == null || SelectedCinema == null || SelectedHall == null)
                 return false;
 
-            // Tjek at instruktør og premieredato er udfyldt
+            // Tjek at instruktør og premieredato er udfyldt.
             if (string.IsNullOrWhiteSpace(Director) || PremiereDate == null)
                 return false;
 
-            // Tjek at klokkeslættet er gyldigt – ellers er knappen deaktiveret
+            // Tjek at klokkeslættet er gyldigt – ellers er knappen deaktiveret.
+            // TryParseScreeningTime returnerer true hvis parsing lykkes, ellers false.
+            // "out _" betyder, at vi ignorerer de to ud-parametre (time og errorMessage),
+            // fordi vi kun er interesseret i, om klokkeslættet er gyldigt (bool-værdien) og ikke hvad fejlen er.
             return TryParseScreeningTime(out _, out _);
         }
 
-        // Hovedmetoden: opretter en ny forestilling (UC2)
+        // Hovedmetoden: opretter en ny forestilling (UC2).
         private void CreateScreening()
         {
-            // Håndtering af ugyldigt klokkeslæt – giver en venlig fejlbesked
+            // Håndtering af ugyldigt klokkeslæt – giver en venlig fejlbesked.
             if (!TryParseScreeningTime(out var time, out var parseError))
             {
                 StatusMessage = $"FEJL: {parseError}";
                 return;
             }
 
-            // Sæt dato og tid sammen til et DateTime-objekt
-            // Brugeren har valgt dato i DatePicker og tid i TextBox
+            // Sæt dato og tid sammen til et DateTime-objekt.
+            // Brugeren har valgt dato i DatePicker og tid i TextBox.
             var startTime = ScreeningDate.Date + time;
 
-            // Filmen må ikke vises før premieredatoen
-            // Dette er en domæneregel - en film kan kun vises efter den er udkommet
+            // Validering: Filmen må (kan?) ikke vises før premieredatoen.
             // Note: Scenarierne specificerer intet om at pre-screenings kunne være en ting, f.eks. 
             // en forestilling oprettet i systemet før premieredatoen kun for ansatte eller andet
             // i denne stil. Derfor dette tjek, men skulle måske ændres hvis pre-screenings blev
@@ -336,8 +349,8 @@ namespace TheMovies.UI.ViewModels
             Screening tentativeScreening;
             try
             {
-                // Opretter et midlertidigt Screening-objekt - det gemmes først senere
-                // Dette gør det muligt at tjekke for overlap, før vi gemmer noget
+                // Opretter et midlertidigt Screening-objekt - det gemmes først senere (hvis alt går vel).
+                // Dette gør det muligt at tjekke for overlap, før vi gemmer noget.
                 tentativeScreening = new Screening(SelectedMovie, SelectedCinema, SelectedHall, startTime);
             }
             catch (ArgumentException ex)
@@ -346,24 +359,24 @@ namespace TheMovies.UI.ViewModels
                 return;
             }
 
-            // UC2 undtagelsesflow 6a: tjek for overlap, før forestillingen oprettes
-            // Hvis der allerede er en forestilling i samme sal på samme tid, afvises oprettelsen
+            // UC2 undtagelsesflow 6a: tjek for overlap, før forestillingen oprettes.
+            // Hvis der allerede er en forestilling i samme sal på samme tid, afvises oprettelsen.
             if (_screeningRepository.HasOverlap(tentativeScreening))
             {
                 StatusMessage = "FEJL: Tidspunktet er optaget i den valgte sal – vælg et nyt tidspunkt.";
                 return;
             }
 
-            // Film-objektet får yderligere data mht. instruktør og premieredato (UC2 trin 4-5)
-            // Disse data blev indtastet af brugeren i CreateScreeningView.xaml
+            // Movie-objektet får yderligere data mht. instruktør og premieredato (UC2 trin 4-5).
+            // Disse data blev indtastet af brugeren i CreateScreeningView.xaml.
             SelectedMovie.Director = Director;
             SelectedMovie.PremiereDate = PremiereDate;
 
             try
             {
-                // Gem filmændringerne (instruktør og premieredato) via repository
+                // Gem filmændringerne (instruktør og premieredato) via repository (dvs. opdater Movie-objekt).
                 _movieRepository.UpdateMovie(SelectedMovie);
-                // Gem den nye forestilling via repository
+                // Gem den nye forestilling via repository.
                 _screeningRepository.SaveScreening(tentativeScreening);
             }
             catch (Exception ex)
@@ -372,39 +385,40 @@ namespace TheMovies.UI.ViewModels
                 return;
             }
 
-            // Succes: opdater status (UC2 trin 8)
+            // Succes: opdater status (UC2 trin 8).
             StatusMessage = $"Forestillingen for '{SelectedMovie.Title}' er nu oprettet!";
         }
 
-        // Opdaterer listen af sale, når der vælges en ny biograf
-        // Dette sikrer at brugeren kun kan vælge sale, der faktisk findes i den valgte biograf
+        // Opdaterer listen af sale, når der vælges en ny biograf.
+        // Dette sikrer at brugeren kun kan vælge sale, der faktisk findes i den valgte biograf.
         private void RefreshAvailableHalls()
         {
-            // Ryd den eksisterende liste
+            // Ryd den eksisterende liste.
             AvailableHalls.Clear();
 
-            // Hvis der ikke er valgt en biograf, er der ingen sale at vise
+            // Hvis der ikke er valgt en biograf, er der ingen sale at vise.
             if (SelectedCinema == null) return;
 
-            // Tilføj alle sale fra den valgte biograf
+            // Tilføj alle sale fra den valgte biograf.
             foreach (var hall in SelectedCinema.Halls)
                 AvailableHalls.Add(hall);
         }
 
-        // Indlæser registrerede film ved opstart
+        // Indlæser registrerede film ved opstart.
         private void LoadMovies()
         {
-            // Ryd eventuelle gamle film fra listen
+            // Ryd eventuelle gamle film fra listen.
             AvailableMovies.Clear();
             try
             {
                 // Prøv at hente alle film fra repository. Hvis der opstår en fejl
                 // (f.eks. filen er korrupt), fanges den og vi viser en venlig fejlbesked.
-                var movies = _movieRepository?.GetAll();
+                var movies = _movieRepository.GetAll();
                 if (movies != null)
                     foreach (var movie in movies)
                         AvailableMovies.Add(movie);
 
+                // Opdater statusbeskeden med antal indlæste film hvis Count > 0, eller en venlig besked og instruks hvis ingen film er fundet.
                 StatusMessage = AvailableMovies.Count > 0
                     ? $"Indlæste {AvailableMovies.Count} film fra fil"
                     : "Ingen film fundet – registrer en film først!";

@@ -43,10 +43,11 @@ namespace TheMovies.UI.ViewModels
             LoadMovies();
         }
 
-        // Properties - disse bindes til UI'et (TextBox'er i RegisterMovieView.xaml)
+        // Properties - disse bindes til UI'et (TextBox'er i RegisterMovieView.xaml).
 
         public string Title
         {
+            // Property getter der henter værdien fra backing field'et _title.
             get => _title;
             set
             {
